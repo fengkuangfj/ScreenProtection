@@ -1,0 +1,13 @@
+#pragma once
+
+#ifndef MOD_TEST_SCREEN_PROTECTION
+#define MOD_TEST_SCREEN_PROTECTION L"≤‚ ‘Ωÿ∆¡±£ª§"
+#endif
+
+typedef
+BOOL
+(*SCREENPROTECTIONSTART)();
+
+typedef
+BOOL
+(*SCREENPROTECTIONSTOP)();
