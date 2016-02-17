@@ -2,8 +2,14 @@
 Microsoft Visual Studio Solution File, Format Version 11.00
 # Visual Studio 2010
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TestScreenProtection", "TestScreenProtection\TestScreenProtection.vcxproj", "{C558F188-6595-401F-A327-ADB9973FC7BD}"
+	ProjectSection(ProjectDependencies) = postProject
+		{089A7685-F8A1-4836-9F15-DCACBCC616D3} = {089A7685-F8A1-4836-9F15-DCACBCC616D3}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ScreenProtection", "ScreenProtection\ScreenProtection.vcxproj", "{089A7685-F8A1-4836-9F15-DCACBCC616D3}"
+	ProjectSection(ProjectDependencies) = postProject
+		{B1FF8C95-781A-4D15-8559-43A15CE67EDA} = {B1FF8C95-781A-4D15-8559-43A15CE67EDA}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "3rd", "3rd\3rd.vcxproj", "{B1FF8C95-781A-4D15-8559-43A15CE67EDA}"
 EndProject

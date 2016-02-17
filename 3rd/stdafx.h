@@ -18,5 +18,6 @@
 
 #include "3rd.h"
 #include "..\\..\\..\\GitHub\\Public\\ModulePath\\ModulePath.h"
-#include "..\\..\\..\\GitHub\\Public\\PrintfEx\\PrintfEx.h"
 #include "..\\..\\..\\GitHub\\Public\\ProcessPath\\ProcessPath.h"
+#include "..\\..\\..\\GitHub\\Public\\ProcessType\\ProcessType.h"
+#include "..\\..\\..\\GitHub\\Public\\PrintfEx\\PrintfEx.h"

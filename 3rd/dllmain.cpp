@@ -6,22 +6,19 @@ BOOL APIENTRY DllMain( HMODULE hModule,
                        LPVOID lpReserved
 					 )
 {
-	CPrintfEx PrintfEx;
-
-
 	switch (ul_reason_for_call)
 	{
 	case DLL_PROCESS_ATTACH:
-		{
-			PrintfEx.Init();
-
-			break;
-		}
+		break;
 	case DLL_THREAD_ATTACH:
 	case DLL_THREAD_DETACH:
 		break;
 	case DLL_PROCESS_DETACH:
-		break;
+		{
+			CProcessPath::ReleaseInstance();
+			CPrintfEx::ReleaseInstance();
+			break;
+		}		
 	}
 	return TRUE;
 }
