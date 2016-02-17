@@ -57,6 +57,9 @@
     <ClInclude Include="..\..\..\GitHub\Public\PrintfEx\PrintfEx.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\Public\ProcessType\ProcessType.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -90,6 +93,9 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\GitHub\Public\PrintfEx\PrintfEx.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Public\ProcessType\ProcessType.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

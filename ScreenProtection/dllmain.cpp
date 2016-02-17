@@ -6,10 +6,7 @@ BOOL APIENTRY DllMain(HMODULE hModule,
 	LPVOID lpReserved
 	)
 {
-	CSimpleDump			SimpleDump;
-	CSimpleLog			SimpleLog;
 	CHook				Hook;
-	CPrintfEx			PrintfEx;
 
 	CRUSH_HANDLER_INFO	CrushHandlerInfo;
 	TCHAR				tchPath[MAX_PATH] = { 0 };
@@ -20,8 +17,6 @@ BOOL APIENTRY DllMain(HMODULE hModule,
 	{
 		case DLL_PROCESS_ATTACH:
 		{
-			PrintfEx.Init();
-
 			if (!GetModuleFileName(hModule, tchPath, _countof(tchPath)))
 				break;
 
@@ -33,14 +28,14 @@ BOOL APIENTRY DllMain(HMODULE hModule,
 
 			StringCchPrintf(tchPath, _countof(tchPath), _T("%lS_%05d.log"), tchPath, GetCurrentProcessId());
 
-			SimpleLog.Init(tchPath);
+			CSimpleLog::GetInstance(tchPath);
 
 			ZeroMemory(&CrushHandlerInfo, sizeof(CrushHandlerInfo));
 			CrushHandlerInfo.EhType = EH_TYPE_S;
 			CrushHandlerInfo.bFirstHandler = TRUE;
 			CrushHandlerInfo.MiniDumpType = MiniDumpWithFullMemory;
 
-			SimpleDump.RegisterCrushHandler(&CrushHandlerInfo);
+			CSimpleDump::GetInstance()->RegisterCrushHandler(&CrushHandlerInfo);
 
 			Hook.Init(hModule);
 
@@ -53,7 +48,9 @@ BOOL APIENTRY DllMain(HMODULE hModule,
 		{
 			Hook.Unload();
 
-			SimpleLog.Unload();
+			CSimpleDump::ReleaseInstance();
+			CSimpleLog::ReleaseInstance();
+			CPrintfEx::ReleaseInstance();
 
 			break;
 		}

@@ -203,7 +203,7 @@ __in HMODULE hModule
 
 		ms_ulPid = GetCurrentProcessId();
 
-		if (!CProcessPath::Get(TRUE, 0, ms_tchProcPath, _countof(ms_tchProcPath)))
+		if (!CProcessPath::GetInstance()->Get(TRUE, 0, ms_tchProcPath, _countof(ms_tchProcPath)))
 		{
 			CSimpleLogSR(MOD_HOOK, LOG_LEVEL_ERROR, "Get failed");
 			__leave;
@@ -256,6 +256,8 @@ CHook::Unload()
 			FreeLibrary(ms_hModule3rd);
 			ms_hModule3rd = NULL;
 		}
+
+		CProcessPath::ReleaseInstance();
 
 		if (!Detach())
 		{

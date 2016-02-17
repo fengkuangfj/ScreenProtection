@@ -18,7 +18,7 @@ BOOL APIENTRY DllMain( HMODULE hModule,
 			CProcessPath::ReleaseInstance();
 			CPrintfEx::ReleaseInstance();
 			break;
-		}		
+		}
 	}
 	return TRUE;
 }
