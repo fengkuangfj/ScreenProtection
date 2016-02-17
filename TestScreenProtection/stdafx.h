@@ -17,4 +17,7 @@
 #include <conio.h>
 
 #include "TestScreenProtection.h"
-#include "..\\..\\..\\GitHub\\Public\\PrintfEx\\PrintfEx.h"
+#include "..\\..\\Public\\ModulePath\\ModulePath.h"
+#include "..\\..\\Public\\ProcessPath\\ProcessPath.h"
+#include "..\\..\\Public\\ProcessType\\ProcessType.h"
+#include "..\\..\\Public\\PrintfEx\\PrintfEx.h"

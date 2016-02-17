@@ -17,14 +17,14 @@
 #include "ScreenProtection.h"
 #include "Hook.h"
 #include "hookhelper.h"
-#include "..\\..\\..\\GitHub\\Public\\ModulePath\\ModulePath.h"
-#include "..\\..\\..\\GitHub\\Public\\ProcessPath\\ProcessPath.h"
-#include "..\\..\\..\\GitHub\\Public\\ProcessType\\ProcessType.h"
-#include "..\\..\\..\\GitHub\\Public\\PrintfEx\\PrintfEx.h"
-#include "..\\..\\..\\GitHub\\Public\\OperationSystemVersion\\OperationSystemVersion.h"
-#include "..\\..\\..\\GitHub\\Public\\SimpleDump\\SimpleDump.h"
-#include "..\\..\\..\\GitHub\\Public\\SimpleLog\\SimpleLog.h"
-#include "..\\..\\..\\GitHub\\Public\\StackBacktrace\\StackBacktrace.h"
+#include "..\\..\\Public\\ModulePath\\ModulePath.h"
+#include "..\\..\\Public\\ProcessPath\\ProcessPath.h"
+#include "..\\..\\Public\\ProcessType\\ProcessType.h"
+#include "..\\..\\Public\\PrintfEx\\PrintfEx.h"
+#include "..\\..\\Public\\OperationSystemVersion\\OperationSystemVersion.h"
+#include "..\\..\\Public\\SimpleDump\\SimpleDump.h"
+#include "..\\..\\Public\\SimpleLog\\SimpleLog.h"
+#include "..\\..\\Public\\StackBacktrace\\StackBacktrace.h"
 
 #ifdef _AMD64_
 #pragma comment(lib, "hookhelperx64.lib")

@@ -9,13 +9,9 @@ int _tmain(int argc, _TCHAR* argv[])
 	SCREENPROTECTIONSTART	ScreenProtectionStart = NULL;
 	SCREENPROTECTIONSTOP	ScreenProtectionStop = NULL;
 
-	CPrintfEx				PrintfEx;
-
 
 	__try
 	{
-		PrintfEx.Init();
-
 		hModule = LoadLibrary(L"ScreenProtection.dll");
 		if (!hModule)
 		{
@@ -56,6 +52,8 @@ int _tmain(int argc, _TCHAR* argv[])
 			FreeLibrary(hModule);
 			hModule = NULL;
 		}
+
+		CPrintfEx::ReleaseInstance();
 	}
 
 	return 0;
