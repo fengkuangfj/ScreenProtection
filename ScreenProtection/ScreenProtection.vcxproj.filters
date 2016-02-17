@@ -33,31 +33,31 @@
     <ClInclude Include="hookhelper.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\GitHub\Public\SimpleDump\SimpleDump.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\GitHub\Public\SimpleLog\SimpleLog.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\GitHub\Public\OperationSystemVersion\OperationSystemVersion.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="Hook.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\GitHub\Public\StackBacktrace\StackBacktrace.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\GitHub\Public\ProcessPath\ProcessPath.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\GitHub\Public\ModulePath\ModulePath.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\GitHub\Public\PrintfEx\PrintfEx.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\Public\ProcessType\ProcessType.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Public\PrintfEx\PrintfEx.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Public\ModulePath\ModulePath.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Public\ProcessPath\ProcessPath.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Public\OperationSystemVersion\OperationSystemVersion.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Public\SimpleDump\SimpleDump.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Public\SimpleLog\SimpleLog.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Public\StackBacktrace\StackBacktrace.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
@@ -71,31 +71,31 @@
     <ClCompile Include="dllmain.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\GitHub\Public\SimpleDump\SimpleDump.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\GitHub\Public\SimpleLog\SimpleLog.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\GitHub\Public\OperationSystemVersion\OperationSystemVersion.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="Hook.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\GitHub\Public\StackBacktrace\StackBacktrace.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\GitHub\Public\ProcessPath\ProcessPath.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\GitHub\Public\ModulePath\ModulePath.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\GitHub\Public\PrintfEx\PrintfEx.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\Public\ProcessType\ProcessType.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Public\PrintfEx\PrintfEx.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Public\ModulePath\ModulePath.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Public\ProcessPath\ProcessPath.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Public\OperationSystemVersion\OperationSystemVersion.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Public\SimpleDump\SimpleDump.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Public\SimpleLog\SimpleLog.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Public\StackBacktrace\StackBacktrace.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
