@@ -15,7 +15,7 @@ BOOL APIENTRY DllMain( HMODULE hModule,
 		break;
 	case DLL_PROCESS_DETACH:
 		{
-			CProcessPath::ReleaseInstance();
+			CProcessControl::ReleaseInstance();
 			CPrintfEx::ReleaseInstance();
 			break;
 		}

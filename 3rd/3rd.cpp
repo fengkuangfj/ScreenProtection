@@ -15,7 +15,7 @@ BOOL
 
 	__try
 	{
-		if (!CProcessPath::GetInstance()->Get(FALSE, ulPid, tchProcPath, _countof(tchProcPath)))
+		if (!CProcessControl::GetInstance()->Get(FALSE, ulPid, tchProcPath, _countof(tchProcPath)))
 		{
 			printfEx(MOD_3RD, PRINTF_LEVEL_ERROR, "Get failed");
 			__leave;

@@ -39,6 +39,10 @@ _In_ DWORD dwRop
 class CHook
 {
 public:
+	CHook();
+
+	~CHook();
+
 	BOOL
 		Init(
 		__in HMODULE hModule

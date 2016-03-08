@@ -10,6 +10,16 @@ ULONG				CHook::ms_ulPid = 0;
 ISNEEDPROTECT		CHook::ms_IsNeedProtect = NULL;
 HMODULE				CHook::ms_hModule3rd = NULL;
 
+CHook::CHook()
+{
+	;
+}
+
+CHook::~CHook()
+{
+	;
+}
+
 BOOL
 CHook::Attach()
 {
@@ -203,7 +213,7 @@ __in HMODULE hModule
 
 		ms_ulPid = GetCurrentProcessId();
 
-		if (!CProcessPath::GetInstance()->Get(TRUE, 0, ms_tchProcPath, _countof(ms_tchProcPath)))
+		if (!CProcessControl::GetInstance()->Get(TRUE, 0, ms_tchProcPath, _countof(ms_tchProcPath)))
 		{
 			CSimpleLogSR(MOD_HOOK, LOG_LEVEL_ERROR, "Get failed");
 			__leave;
@@ -215,7 +225,7 @@ __in HMODULE hModule
 			__leave;
 		}
 
-		ms_hModule3rd = LoadLibrary(_T("D:\\1\\3rd.dll"));
+		ms_hModule3rd = LoadLibrary(_T("G:\\GitHub\\ScreenProtection\\Debug\\3rd.dll"));
 		if (!ms_hModule3rd)
 		{
 			CSimpleLogSR(MOD_HOOK, LOG_LEVEL_ERROR, "LoadLibrary failed. (%d)", GetLastError());
@@ -257,7 +267,7 @@ CHook::Unload()
 			ms_hModule3rd = NULL;
 		}
 
-		CProcessPath::ReleaseInstance();
+		CProcessControl::ReleaseInstance();
 
 		if (!Detach())
 		{
@@ -286,7 +296,7 @@ _In_ LPARAM lParam
 	CHook Hook;
 
 
-	__try
+	do 
 	{
 		EnterCriticalSection(&ms_CsHook);
 
@@ -295,19 +305,17 @@ _In_ LPARAM lParam
 			ms_ulCount++;
 
 			if (Hook.IsNeedNotAttach())
-				__leave;
+				break;
 
 			if (!Hook.Attach())
 			{
 				CSimpleLogSR(MOD_HOOK, LOG_LEVEL_ERROR, "Attach failed");
-				__leave;
+				break;
 			}
 		}
-	}
-	__finally
-	{
-		LeaveCriticalSection(&ms_CsHook);
-	}
+	} while (FALSE);
+
+	LeaveCriticalSection(&ms_CsHook);
 
 	return CallNextHookEx(NULL, code, wParam, lParam);
 }
@@ -384,8 +392,8 @@ CHook::IsNeedNotAttach()
 			__leave;
 		}
 
-		if (_tcslen(ms_tchProcPath) >= _tcslen(_T("FSCapture.exe")) &&
-			(0 == _tcsnicmp(ms_tchProcPath + (_tcslen(ms_tchProcPath) - _tcslen(_T("FSCapture.exe"))), _T("FSCapture.exe"), _tcslen(_T("FSCapture.exe")))))
+		if (_tcslen(ms_tchProcPath) >= _tcslen(_T("rdfsnap.exe")) &&
+			(0 == _tcsnicmp(ms_tchProcPath + (_tcslen(ms_tchProcPath) - _tcslen(_T("rdfsnap.exe"))), _T("rdfsnap.exe"), _tcslen(_T("rdfsnap.exe")))))
 			bRet = FALSE;
 		else
 			bRet = TRUE;

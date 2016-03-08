@@ -153,8 +153,8 @@
     <ClInclude Include="..\..\Public\ModulePath\ModulePath.h" />
     <ClInclude Include="..\..\Public\OperationSystemVersion\OperationSystemVersion.h" />
     <ClInclude Include="..\..\Public\PrintfEx\PrintfEx.h" />
-    <ClInclude Include="..\..\Public\ProcessPath\ProcessPath.h" />
-    <ClInclude Include="..\..\Public\ProcessType\ProcessType.h" />
+    <ClInclude Include="..\..\Public\ProcessControl\ProcessControl.h" />
+    <ClInclude Include="..\..\Public\Public.h" />
     <ClInclude Include="..\..\Public\SimpleDump\SimpleDump.h" />
     <ClInclude Include="..\..\Public\SimpleLog\SimpleLog.h" />
     <ClInclude Include="..\..\Public\StackBacktrace\StackBacktrace.h" />
@@ -184,17 +184,17 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="..\..\Public\ProcessPath\ProcessPath.cpp">
+    <ClCompile Include="..\..\Public\ProcessControl\ProcessControl.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="..\..\Public\ProcessType\ProcessType.cpp">
+    <ClCompile Include="..\..\Public\Public.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="..\..\Public\SimpleDump\SimpleDump.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>

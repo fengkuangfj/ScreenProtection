@@ -17,7 +17,7 @@
 #include <stdlib.h>
 
 #include "3rd.h"
+#include "..\\..\\Public\\Public.h"
 #include "..\\..\\Public\\ModulePath\\ModulePath.h"
-#include "..\\..\\Public\\ProcessPath\\ProcessPath.h"
-#include "..\\..\\Public\\ProcessType\\ProcessType.h"
+#include "..\\..\\Public\\ProcessControl\\ProcessControl.h"
 #include "..\\..\\Public\\PrintfEx\\PrintfEx.h"
