@@ -6,8 +6,6 @@ BOOL APIENTRY DllMain(HMODULE hModule,
 	LPVOID lpReserved
 	)
 {
-	CHook				Hook;
-
 	CRUSH_HANDLER_INFO	CrushHandlerInfo;
 	TCHAR				tchPath[MAX_PATH] = { 0 };
 	LPTSTR				lpPosition = NULL;
@@ -37,7 +35,7 @@ BOOL APIENTRY DllMain(HMODULE hModule,
 
 			CSimpleDump::GetInstance()->RegisterCrushHandler(&CrushHandlerInfo);
 
-			Hook.Init(hModule);
+			CHook::GetInstance(hModule);
 
 			break;
 		}
@@ -46,8 +44,7 @@ BOOL APIENTRY DllMain(HMODULE hModule,
 			break;
 		case DLL_PROCESS_DETACH:
 		{
-			Hook.Unload();
-
+			CHook::ReleaseInstance();
 			CSimpleDump::ReleaseInstance();
 			CSimpleLog::ReleaseInstance();
 			CPrintfEx::ReleaseInstance();

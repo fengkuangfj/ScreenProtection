@@ -6,14 +6,12 @@
 BOOL
 ScreenProtectionStart()
 {
-	BOOL	bRet = FALSE;
-
-	CHook	Hook;
+	BOOL bRet = FALSE;
 
 
 	__try
 	{
-		if (!Hook.Hook())
+		if (!CHook::GetInstance()->Hook())
 		{
 			CSimpleLogSR(MOD_SCREEN_PROTECTION, LOG_LEVEL_ERROR, "Hook failed");
 			__leave;
@@ -32,14 +30,12 @@ ScreenProtectionStart()
 BOOL
 ScreenProtectionStop()
 {
-	BOOL	bRet = FALSE;
-
-	CHook	Hook;
+	BOOL bRet = FALSE;
 
 
 	__try
 	{
-		if (!Hook.UnHook())
+		if (!CHook::GetInstance()->UnHook())
 		{
 			CSimpleLogSR(MOD_SCREEN_PROTECTION, LOG_LEVEL_ERROR, "UnHook failed");
 			__leave;

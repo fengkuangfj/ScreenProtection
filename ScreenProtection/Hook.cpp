@@ -1,23 +1,41 @@
 #include "stdafx.h"
 
-HMODULE				CHook::ms_hModule = NULL;
-CRITICAL_SECTION	CHook::ms_CsHook = { 0 };
-HHOOK				CHook::ms_hHook = NULL;
-ULONG				CHook::ms_ulCount = 0;
-TCHAR				CHook::ms_tchProcPath[MAX_PATH] = { 0 };
-TCHAR				CHook::ms_tchWindowsDir[MAX_PATH] = { 0 };
-ULONG				CHook::ms_ulPid = 0;
-ISNEEDPROTECT		CHook::ms_IsNeedProtect = NULL;
-HMODULE				CHook::ms_hModule3rd = NULL;
+CHook * CHook::ms_pInstance = NULL;
 
-CHook::CHook()
+CHook::CHook(
+	__in HMODULE hModule
+	)
 {
-	;
+	m_hModule = NULL;
+	m_hHook = NULL;
+	m_ulCount = 0;
+	m_ulPid = 0;
+	m_IsNeedProtect = NULL;
+	m_hModule3rd = NULL;
+
+	ZeroMemory(&m_CsHook, sizeof(m_CsHook));
+	ZeroMemory(m_tchProcPath, sizeof(m_tchProcPath));
+	ZeroMemory(m_tchWindowsDir, sizeof(m_tchWindowsDir));
+
+	if (!Init(hModule))
+		CSimpleLogSR(MOD_HOOK, LOG_LEVEL_ERROR, "Init failed");
 }
 
 CHook::~CHook()
 {
-	;
+	if (!Unload())
+		CSimpleLogSR(MOD_HOOK, LOG_LEVEL_ERROR, "Unload failed");
+
+	m_hModule = NULL;
+	m_hHook = NULL;
+	m_ulCount = 0;
+	m_ulPid = 0;
+	m_IsNeedProtect = NULL;
+	m_hModule3rd = NULL;
+
+	ZeroMemory(&m_CsHook, sizeof(m_CsHook));
+	ZeroMemory(m_tchProcPath, sizeof(m_tchProcPath));
+	ZeroMemory(m_tchWindowsDir, sizeof(m_tchWindowsDir));
 }
 
 BOOL
@@ -110,7 +128,7 @@ _In_ LPARAM lParam
 			__leave;
 
 		GetWindowThreadProcessId(hwnd, &dwProcessId);
-		if (!ms_IsNeedProtect(dwProcessId))
+		if (!CHook::GetInstance()->m_IsNeedProtect(dwProcessId))
 			__leave;
 
 		lpEnumWindowsProcParam->ProtectWindowsInfo[lpEnumWindowsProcParam->ulCount].Rect.left = WindowInfo.rcWindow.left;
@@ -207,33 +225,33 @@ __in HMODULE hModule
 			__leave;
 		}
 
-		ms_hModule = hModule;
+		m_hModule = hModule;
 
-		InitializeCriticalSection(&ms_CsHook);
+		InitializeCriticalSection(&m_CsHook);
 
-		ms_ulPid = GetCurrentProcessId();
+		m_ulPid = GetCurrentProcessId();
 
-		if (!CProcessControl::GetInstance()->Get(TRUE, 0, ms_tchProcPath, _countof(ms_tchProcPath)))
+		if (!CProcessControl::GetInstance()->Get(TRUE, 0, m_tchProcPath, _countof(m_tchProcPath)))
 		{
 			CSimpleLogSR(MOD_HOOK, LOG_LEVEL_ERROR, "Get failed");
 			__leave;
 		}
 
-		if (!GetWindowsDirectory(ms_tchWindowsDir, _countof(ms_tchWindowsDir)))
+		if (!GetWindowsDirectory(m_tchWindowsDir, _countof(m_tchWindowsDir)))
 		{
 			CSimpleLogSR(MOD_HOOK, LOG_LEVEL_ERROR, "GetWindowsDirectory failed. (%d)", GetLastError());
 			__leave;
 		}
 
-		ms_hModule3rd = LoadLibrary(_T("G:\\GitHub\\ScreenProtection\\Debug\\3rd.dll"));
-		if (!ms_hModule3rd)
+		m_hModule3rd = LoadLibrary(_T("G:\\GitHub\\ScreenProtection\\Debug\\3rd.dll"));
+		if (!m_hModule3rd)
 		{
 			CSimpleLogSR(MOD_HOOK, LOG_LEVEL_ERROR, "LoadLibrary failed. (%d)", GetLastError());
 			__leave;
 		}
 
-		ms_IsNeedProtect = (ISNEEDPROTECT)GetProcAddress(ms_hModule3rd, "IsNeedProtect");
-		if (!ms_IsNeedProtect)
+		m_IsNeedProtect = (ISNEEDPROTECT)GetProcAddress(m_hModule3rd, "IsNeedProtect");
+		if (!m_IsNeedProtect)
 		{
 			CSimpleLogSR(MOD_HOOK, LOG_LEVEL_ERROR, "GetProcAddress failed. (%d)", GetLastError());
 			__leave;
@@ -261,10 +279,10 @@ CHook::Unload()
 
 	__try
 	{
-		if (ms_hModule3rd)
+		if (m_hModule3rd)
 		{
-			FreeLibrary(ms_hModule3rd);
-			ms_hModule3rd = NULL;
+			FreeLibrary(m_hModule3rd);
+			m_hModule3rd = NULL;
 		}
 
 		CProcessControl::ReleaseInstance();
@@ -293,21 +311,18 @@ _In_ WPARAM wParam,
 _In_ LPARAM lParam
 )
 {
-	CHook Hook;
-
-
 	do 
 	{
-		EnterCriticalSection(&ms_CsHook);
+		EnterCriticalSection(&CHook::GetInstance()->m_CsHook);
 
-		if (!ms_ulCount)
+		if (!CHook::GetInstance()->m_ulCount)
 		{
-			ms_ulCount++;
+			CHook::GetInstance()->m_ulCount++;
 
-			if (Hook.IsNeedNotAttach())
+			if (CHook::GetInstance()->IsNeedNotAttach())
 				break;
 
-			if (!Hook.Attach())
+			if (!CHook::GetInstance()->Attach())
 			{
 				CSimpleLogSR(MOD_HOOK, LOG_LEVEL_ERROR, "Attach failed");
 				break;
@@ -315,7 +330,7 @@ _In_ LPARAM lParam
 		}
 	} while (FALSE);
 
-	LeaveCriticalSection(&ms_CsHook);
+	LeaveCriticalSection(&CHook::GetInstance()->m_CsHook);
 
 	return CallNextHookEx(NULL, code, wParam, lParam);
 }
@@ -328,11 +343,11 @@ CHook::Hook()
 
 	__try
 	{
-		if (NULL != ms_hHook)
+		if (NULL != m_hHook)
 			__leave;
 
-		ms_hHook = SetWindowsHookEx(WH_GETMESSAGE, (HOOKPROC)GetMsgProc, ms_hModule, 0);
-		if (NULL == ms_hHook)
+		m_hHook = SetWindowsHookEx(WH_GETMESSAGE, (HOOKPROC)GetMsgProc, m_hModule, 0);
+		if (NULL == m_hHook)
 		{
 			CSimpleLogSR(MOD_HOOK, LOG_LEVEL_ERROR, "SetWindowsHookEx failed. (%d)", GetLastError());
 			__leave;
@@ -356,15 +371,15 @@ CHook::UnHook()
 
 	__try
 	{
-		if (NULL != ms_hHook)
+		if (NULL != m_hHook)
 		{
-			if (!UnhookWindowsHookEx(ms_hHook))
+			if (!UnhookWindowsHookEx(m_hHook))
 			{
 				CSimpleLogSR(MOD_HOOK, LOG_LEVEL_ERROR, "UnhookWindowsHookEx failed. (%d)", GetLastError());
 				__leave;
 			}
 
-			ms_hHook = NULL;
+			m_hHook = NULL;
 		}
 
 		bRet = TRUE;
@@ -385,15 +400,15 @@ CHook::IsNeedNotAttach()
 
 	__try
 	{
-		if (_tcslen(ms_tchProcPath) >= _tcslen(_T("DbgView.exe")) &&
-			(0 == _tcsnicmp(ms_tchProcPath + (_tcslen(ms_tchProcPath) - _tcslen(_T("DbgView.exe"))), _T("DbgView.exe"), _tcslen(_T("DbgView.exe")))))
+		if (_tcslen(m_tchProcPath) >= _tcslen(_T("DbgView.exe")) &&
+			(0 == _tcsnicmp(m_tchProcPath + (_tcslen(m_tchProcPath) - _tcslen(_T("DbgView.exe"))), _T("DbgView.exe"), _tcslen(_T("DbgView.exe")))))
 		{
 			bRet = TRUE;
 			__leave;
 		}
 
-		if (_tcslen(ms_tchProcPath) >= _tcslen(_T("rdfsnap.exe")) &&
-			(0 == _tcsnicmp(ms_tchProcPath + (_tcslen(ms_tchProcPath) - _tcslen(_T("rdfsnap.exe"))), _T("rdfsnap.exe"), _tcslen(_T("rdfsnap.exe")))))
+		if (_tcslen(m_tchProcPath) >= _tcslen(_T("rdfsnap.exe")) &&
+			(0 == _tcsnicmp(m_tchProcPath + (_tcslen(m_tchProcPath) - _tcslen(_T("rdfsnap.exe"))), _T("rdfsnap.exe"), _tcslen(_T("rdfsnap.exe")))))
 			bRet = FALSE;
 		else
 			bRet = TRUE;
@@ -404,4 +419,34 @@ CHook::IsNeedNotAttach()
 	}
 
 	return bRet;
+}
+
+CHook *
+	CHook::GetInstance(
+	__in HMODULE hModule
+	)
+{
+	if (!ms_pInstance)
+	{
+		do 
+		{
+			ms_pInstance = new CHook(hModule);
+			if (!ms_pInstance)
+				Sleep(1000);
+			else
+				break;
+		} while (TRUE);
+	}
+
+	return ms_pInstance;
+}
+
+VOID
+	CHook::ReleaseInstance()
+{
+	if (ms_pInstance)
+	{
+		delete ms_pInstance;
+		ms_pInstance = NULL;
+	}
 }

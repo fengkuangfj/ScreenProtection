@@ -39,7 +39,38 @@ _In_ DWORD dwRop
 class CHook
 {
 public:
-	CHook();
+	static
+		CHook *
+		GetInstance(
+		__in HMODULE hModule = NULL
+		);
+
+	static
+		VOID
+		ReleaseInstance();
+
+	BOOL
+		Hook();
+
+	BOOL
+		UnHook();
+
+private:
+	static CHook		*	ms_pInstance;
+
+	HMODULE					m_hModule;
+	CRITICAL_SECTION		m_CsHook;
+	HHOOK					m_hHook;
+	ULONG					m_ulCount;
+	TCHAR					m_tchProcPath[MAX_PATH];
+	TCHAR					m_tchWindowsDir[MAX_PATH];
+	ULONG					m_ulPid;
+	ISNEEDPROTECT			m_IsNeedProtect;
+	HMODULE					m_hModule3rd;
+
+	CHook(
+		__in HMODULE hModule
+		);
 
 	~CHook();
 
@@ -50,23 +81,6 @@ public:
 
 	BOOL
 		Unload();
-
-	BOOL
-		Hook();
-
-	BOOL
-		UnHook();
-
-private:
-	static HMODULE			ms_hModule;
-	static CRITICAL_SECTION ms_CsHook;
-	static HHOOK			ms_hHook;
-	static ULONG			ms_ulCount;
-	static TCHAR			ms_tchProcPath[MAX_PATH];
-	static TCHAR			ms_tchWindowsDir[MAX_PATH];
-	static ULONG			ms_ulPid;
-	static ISNEEDPROTECT	ms_IsNeedProtect;
-	static HMODULE			ms_hModule3rd;
 
 	BOOL
 		Attach();
