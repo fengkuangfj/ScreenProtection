@@ -114,12 +114,4 @@ private:
 
 	BOOL
 		IsNeedNotAttach();
-
-	static
-		BOOL
-		CALLBACK
-		EnumWindowsProc(
-		_In_ HWND   hwnd,
-		_In_ LPARAM lParam
-		);
 };

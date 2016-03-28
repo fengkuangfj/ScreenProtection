@@ -85,67 +85,6 @@ CHook::Detach()
 }
 
 BOOL
-CALLBACK
-CHook::EnumWindowsProc(
-_In_ HWND   hwnd,
-_In_ LPARAM lParam
-)
-{
-	WINDOWINFO					WindowInfo = { 0 };
-	DWORD						dwProcessId = 0;
-	LPENUM_WINDOWS_PROC_PARAM	lpEnumWindowsProcParam = NULL;
-
-
-	__try
-	{
-		if (!hwnd || !lParam)
-		{
-			CSimpleLogSR(MOD_HOOK, LOG_LEVEL_ERROR, "input arguments error");
-			__leave;
-		}
-
-		lpEnumWindowsProcParam = (LPENUM_WINDOWS_PROC_PARAM)lParam;
-
-		WindowInfo.cbSize = sizeof(WindowInfo);
-
-		if (!GetWindowInfo(hwnd, &WindowInfo))
-		{
-			CSimpleLogSR(MOD_HOOK, LOG_LEVEL_ERROR, "GetWindowInfo failed. (%d)", GetLastError());
-			__leave;
-		}
-
-		if ((0 == WindowInfo.rcWindow.left && WindowInfo.rcWindow.left == WindowInfo.rcWindow.right) || 
-			(0 == WindowInfo.rcWindow.top && WindowInfo.rcWindow.top == WindowInfo.rcWindow.bottom))
-			__leave;
-
-		if (!(((WindowInfo.rcWindow.left < lpEnumWindowsProcParam->Rect.left &&  lpEnumWindowsProcParam->Rect.left < WindowInfo.rcWindow.right) ||
-			(lpEnumWindowsProcParam->Rect.left <= WindowInfo.rcWindow.left && WindowInfo.rcWindow.right <= lpEnumWindowsProcParam->Rect.right) ||
-			(WindowInfo.rcWindow.left < lpEnumWindowsProcParam->Rect.right &&  lpEnumWindowsProcParam->Rect.right < WindowInfo.rcWindow.right))
-			&&
-			((WindowInfo.rcWindow.top < lpEnumWindowsProcParam->Rect.top &&  lpEnumWindowsProcParam->Rect.top < WindowInfo.rcWindow.bottom) ||
-			(lpEnumWindowsProcParam->Rect.top <= WindowInfo.rcWindow.top && WindowInfo.rcWindow.bottom <= lpEnumWindowsProcParam->Rect.bottom) ||
-			(WindowInfo.rcWindow.top < lpEnumWindowsProcParam->Rect.bottom &&  lpEnumWindowsProcParam->Rect.bottom < WindowInfo.rcWindow.bottom))))
-			__leave;
-
-		GetWindowThreadProcessId(hwnd, &dwProcessId);
-		if (!CHook::GetInstance()->m_IsNeedProtect(dwProcessId))
-			__leave;
-
-		lpEnumWindowsProcParam->ProtectWindowsInfo[lpEnumWindowsProcParam->ulCount].Rect.left = WindowInfo.rcWindow.left;
-		lpEnumWindowsProcParam->ProtectWindowsInfo[lpEnumWindowsProcParam->ulCount].Rect.top = WindowInfo.rcWindow.top;
-		lpEnumWindowsProcParam->ProtectWindowsInfo[lpEnumWindowsProcParam->ulCount].Rect.right = WindowInfo.rcWindow.right;
-		lpEnumWindowsProcParam->ProtectWindowsInfo[lpEnumWindowsProcParam->ulCount].Rect.bottom = WindowInfo.rcWindow.bottom;
-		lpEnumWindowsProcParam->ulCount++;
-	}
-	__finally
-	{
-		;
-	}
-
-	return TRUE;
-}
-
-BOOL
 WINAPI
 CHook::NewBitBlt(
 _In_ HDC   hdcDest,
@@ -159,54 +98,285 @@ _In_ int   nYSrc,
 _In_ DWORD dwRop
 )
 {
-	BOOL					bNeedTureBitBlt = TRUE;
-	HWND					hWnd = NULL;
-	WINDOWINFO				WindowInfo = { 0 };
-	ENUM_WINDOWS_PROC_PARAM EnuWindowsProcParam = { 0 };
+	BOOL		bRet = FALSE;
+
+	HWND		hWndSrc = NULL;
+	HWND		hWndDesktop = NULL;
+	HWND		hWnd = NULL;
+	WINDOWINFO	WindowInfoSrc = { 0 };
+	WINDOWINFO	WindowInfo = { 0 };
+	DWORD		dwPid = 0;
+	BOOL		bFind = FALSE;
+	BOOL		bUsedBitBlt = FALSE;
+	DWORD		dwPidCurrent = 0;
 
 
 	__try
 	{
-		hWnd = WindowFromDC(hdcSrc);
-		if (!hWnd)
+		hWndSrc = WindowFromDC(hdcSrc);
+		if (!hWndSrc)
+			__leave;
+
+		GetWindowThreadProcessId(hWndSrc, &dwPid);
+
+		dwPidCurrent = GetCurrentProcessId();
+		if (dwPid == dwPidCurrent)
+			__leave;
+
+		if (CHook::GetInstance()->m_IsNeedProtect(dwPid))
 		{
-			// CSimpleLogSR(MOD_HOOK, LOG_LEVEL_ERROR, "WindowFromDC failed");
+			bRet = TrueBitBlt(hdcDest, nXDest, nYDest, nWidth, nHeight, hdcSrc, nXSrc, nYSrc, BLACKNESS);
+			if (!bRet)
+			{
+				CSimpleLogSR(MOD_HOOK, LOG_LEVEL_ERROR, "TrueBitBlt failed. (%d)", GetLastError());
+				__leave;
+			}
+
+			bUsedBitBlt = TRUE;
+
+			CSimpleLogSR(MOD_HOOK, LOG_LEVEL_INFORMATION, "BitBlt BLACKNESS direct. (%d) X (%d) - (%d) Y (%d) - (%d)",
+				dwPid,
+				nXDest,
+				nXDest + nWidth,
+				nYDest,
+				nYDest + nHeight
+				);
+
 			__leave;
 		}
 
-		WindowInfo.cbSize = sizeof(WindowInfo);
-
-		if (!GetWindowInfo(hWnd, &WindowInfo))
+		WindowInfoSrc.cbSize = sizeof(WindowInfoSrc);
+		if (!GetWindowInfo(hWndSrc, &WindowInfoSrc))
 		{
 			CSimpleLogSR(MOD_HOOK, LOG_LEVEL_ERROR, "GetWindowInfo failed. (%d)", GetLastError());
 			__leave;
 		}
 
-		EnuWindowsProcParam.Rect.left = WindowInfo.rcWindow.left;
-		EnuWindowsProcParam.Rect.top = WindowInfo.rcWindow.top;
-		EnuWindowsProcParam.Rect.right = WindowInfo.rcWindow.right;
-		EnuWindowsProcParam.Rect.bottom = WindowInfo.rcWindow.bottom;
+		hWndDesktop = GetDesktopWindow();
+		if (!hWndDesktop)
+			__leave;
 
-		if (!EnumWindows(EnumWindowsProc, (LPARAM)&EnuWindowsProcParam))
+		hWnd = GetWindow(hWndDesktop, GW_CHILD);
+		if (!hWnd)
 		{
-			CSimpleLogSR(MOD_HOOK, LOG_LEVEL_ERROR, "EnumWindows failed. (%d)", GetLastError());
+			if (0 != GetLastError())
+				CSimpleLogSR(MOD_HOOK, LOG_LEVEL_ERROR, "GetWindow failed. (%d)", GetLastError());
+
 			__leave;
 		}
 
-		if (!EnuWindowsProcParam.ulCount)
-			__leave;
+		hWnd = GetWindow(hWnd, GW_HWNDLAST);
+		if (!hWnd)
+		{
+			if (0 != GetLastError())
+				CSimpleLogSR(MOD_HOOK, LOG_LEVEL_ERROR, "GetWindow failed. (%d)", GetLastError());
 
-		bNeedTureBitBlt = FALSE;
+			__leave;
+		}
+
+		CSimpleLogSR(MOD_HOOK, LOG_LEVEL_INFORMATION, "BitBlt begin");
+
+		do 
+		{
+			ZeroMemory(&WindowInfo, sizeof(WindowInfo));
+			dwPid = 0;
+
+			hWnd = GetWindow(hWnd, GW_HWNDPREV);
+			if (!hWnd)
+			{
+				if (0 == GetLastError() || 2 == GetLastError())
+					break;
+
+				CSimpleLogSR(MOD_HOOK, LOG_LEVEL_ERROR, "GetWindow failed. (%d)", GetLastError());
+				__leave;
+			}
+
+			WindowInfo.cbSize = sizeof(WindowInfo);
+			if (!GetWindowInfo(hWnd, &WindowInfo))
+			{
+				CSimpleLogSR(MOD_HOOK, LOG_LEVEL_ERROR, "GetWindowInfo failed. (%d)", GetLastError());
+				__leave;
+			}
+
+			if (WS_VISIBLE != (WindowInfo.dwStyle & WS_VISIBLE) ||
+				WindowInfo.rcWindow.left == WindowInfo.rcWindow.right ||
+				WindowInfo.rcWindow.top == WindowInfo.rcWindow.bottom)
+				continue;
+
+			if (!bFind)
+			{
+				if (!(((WindowInfo.rcWindow.left <= WindowInfoSrc.rcWindow.left && WindowInfoSrc.rcWindow.left <= WindowInfo.rcWindow.right) ||
+					(WindowInfoSrc.rcWindow.left <= WindowInfo.rcWindow.left && WindowInfo.rcWindow.right <= WindowInfoSrc.rcWindow.right) ||
+					(WindowInfo.rcWindow.left <= WindowInfoSrc.rcWindow.right && WindowInfoSrc.rcWindow.right <= WindowInfo.rcWindow.right))
+					&&
+					((WindowInfo.rcWindow.top <= WindowInfoSrc.rcWindow.top && WindowInfoSrc.rcWindow.top <= WindowInfo.rcWindow.bottom) ||
+					(WindowInfoSrc.rcWindow.top <= WindowInfo.rcWindow.top && WindowInfo.rcWindow.bottom <= WindowInfoSrc.rcWindow.bottom) ||
+					(WindowInfo.rcWindow.top <= WindowInfoSrc.rcWindow.bottom && WindowInfoSrc.rcWindow.bottom <= WindowInfo.rcWindow.bottom))))
+					continue;
+
+				GetWindowThreadProcessId(hWnd, &dwPid);
+
+				if (dwPid == dwPidCurrent ||
+					!CHook::GetInstance()->m_IsNeedProtect(dwPid))
+					continue;
+
+				bFind = TRUE;
+
+				bRet = TrueBitBlt(hdcDest, nXDest, nYDest, nWidth, nHeight, hdcSrc, nXSrc, nYSrc, dwRop);
+				if (!bRet)
+				{
+					CSimpleLogSR(MOD_HOOK, LOG_LEVEL_ERROR, "TrueBitBlt failed. (%d)", GetLastError());
+					__leave;
+				}
+
+				bUsedBitBlt = TRUE;
+
+				CSimpleLogSR(MOD_HOOK, LOG_LEVEL_INFORMATION, "BitBlt all. (%d) X (%d) - (%d) Y (%d) - (%d)",
+					dwPid,
+					nXDest,
+					nXDest + nWidth,
+					nYDest,
+					nYDest + nHeight
+					);
+
+				bRet = TrueBitBlt(
+					hdcDest,
+					WindowInfo.rcWindow.left,
+					WindowInfo.rcWindow.top,
+					WindowInfo.rcWindow.right - WindowInfo.rcWindow.left,
+					WindowInfo.rcWindow.bottom - WindowInfo.rcWindow.top,
+					hdcSrc,
+					WindowInfo.rcWindow.left,
+					WindowInfo.rcWindow.top,
+					BLACKNESS
+					);
+				if (!bRet)
+				{
+					CSimpleLogSR(MOD_HOOK, LOG_LEVEL_ERROR, "TrueBitBlt failed. (%d)", GetLastError());
+					__leave;
+				}
+
+				CSimpleLogSR(MOD_HOOK, LOG_LEVEL_INFORMATION, "BitBlt BLACKNESS first. (%d) X (%d) - (%d) Y (%d) - (%d)",
+					dwPid,
+					WindowInfo.rcWindow.left,
+					WindowInfo.rcWindow.right,
+					WindowInfo.rcWindow.top,
+					WindowInfo.rcWindow.bottom
+					);
+			}
+			else
+			{
+				if (!(((WindowInfo.rcWindow.left <= WindowInfoSrc.rcWindow.left && WindowInfoSrc.rcWindow.left <= WindowInfo.rcWindow.right) ||
+					(WindowInfoSrc.rcWindow.left <= WindowInfo.rcWindow.left && WindowInfo.rcWindow.right <= WindowInfoSrc.rcWindow.right) ||
+					(WindowInfo.rcWindow.left <= WindowInfoSrc.rcWindow.right && WindowInfoSrc.rcWindow.right <= WindowInfo.rcWindow.right))
+					&&
+					((WindowInfo.rcWindow.top <= WindowInfoSrc.rcWindow.top && WindowInfoSrc.rcWindow.top <= WindowInfo.rcWindow.bottom) ||
+					(WindowInfoSrc.rcWindow.top <= WindowInfo.rcWindow.top && WindowInfo.rcWindow.bottom <= WindowInfoSrc.rcWindow.bottom) ||
+					(WindowInfo.rcWindow.top <= WindowInfoSrc.rcWindow.bottom && WindowInfoSrc.rcWindow.bottom <= WindowInfo.rcWindow.bottom))))
+				{
+					bRet = TrueBitBlt(
+						hdcDest,
+						WindowInfo.rcWindow.left,
+						WindowInfo.rcWindow.top,
+						WindowInfo.rcWindow.right - WindowInfo.rcWindow.left,
+						WindowInfo.rcWindow.bottom - WindowInfo.rcWindow.top,
+						hdcSrc,
+						WindowInfo.rcWindow.left,
+						WindowInfo.rcWindow.top,
+						dwRop
+						);
+					if (!bRet)
+					{
+						CSimpleLogSR(MOD_HOOK, LOG_LEVEL_ERROR, "TrueBitBlt failed. (%d)", GetLastError());
+						__leave;
+					}
+
+					bUsedBitBlt = TRUE;
+
+					CSimpleLogSR(MOD_HOOK, LOG_LEVEL_INFORMATION, "BitBlt dwRop no overlap. (%d) X (%d) - (%d) Y (%d) - (%d)",
+						dwPid,
+						WindowInfo.rcWindow.left,
+						WindowInfo.rcWindow.right,
+						WindowInfo.rcWindow.top,
+						WindowInfo.rcWindow.bottom
+						);
+
+					continue;
+				}
+
+				GetWindowThreadProcessId(hWnd, &dwPid);
+
+				if (dwPid == dwPidCurrent ||
+					!CHook::GetInstance()->m_IsNeedProtect(dwPid))
+				{
+					bRet = TrueBitBlt(
+						hdcDest,
+						WindowInfo.rcWindow.left,
+						WindowInfo.rcWindow.top,
+						WindowInfo.rcWindow.right - WindowInfo.rcWindow.left,
+						WindowInfo.rcWindow.bottom - WindowInfo.rcWindow.top,
+						hdcSrc,
+						WindowInfo.rcWindow.left,
+						WindowInfo.rcWindow.top,
+						dwRop
+						);
+					if (!bRet)
+					{
+						CSimpleLogSR(MOD_HOOK, LOG_LEVEL_ERROR, "TrueBitBlt failed. (%d)", GetLastError());
+						__leave;
+					}
+
+					bUsedBitBlt = TRUE;
+
+					CSimpleLogSR(MOD_HOOK, LOG_LEVEL_INFORMATION, "BitBlt dwRop overlap, but need not protect. (%d) X (%d) - (%d) Y (%d) - (%d)",
+						dwPid,
+						WindowInfo.rcWindow.left,
+						WindowInfo.rcWindow.right,
+						WindowInfo.rcWindow.top,
+						WindowInfo.rcWindow.bottom
+						);
+
+					continue;
+				}
+
+				bRet = TrueBitBlt(
+					hdcDest,
+					WindowInfo.rcWindow.left,
+					WindowInfo.rcWindow.top,
+					WindowInfo.rcWindow.right - WindowInfo.rcWindow.left,
+					WindowInfo.rcWindow.bottom - WindowInfo.rcWindow.top,
+					hdcSrc,
+					WindowInfo.rcWindow.left,
+					WindowInfo.rcWindow.top,
+					BLACKNESS
+					);
+				if (!bRet)
+				{
+					CSimpleLogSR(MOD_HOOK, LOG_LEVEL_ERROR, "TrueBitBlt failed. (%d)", GetLastError());
+					__leave;
+				}
+
+				bUsedBitBlt = TRUE;
+
+				CSimpleLogSR(MOD_HOOK, LOG_LEVEL_INFORMATION, "BitBlt BLACKNESS not first. (%d) X (%d) - (%d) Y (%d) - (%d)",
+					dwPid,
+					WindowInfo.rcWindow.left,
+					WindowInfo.rcWindow.right,
+					WindowInfo.rcWindow.top,
+					WindowInfo.rcWindow.bottom
+					);
+			}
+		} while (TRUE);
+
+		CSimpleLogSR(MOD_HOOK, LOG_LEVEL_INFORMATION, "BitBlt end");
 	}
 	__finally
 	{
-		;
+		if (!bUsedBitBlt)
+			bRet = TrueBitBlt(hdcDest, nXDest, nYDest, nWidth, nHeight, hdcSrc, nXSrc, nYSrc, dwRop);
 	}
 
-	if (bNeedTureBitBlt)
-		return TrueBitBlt(hdcDest, nXDest, nYDest, nWidth, nHeight, hdcSrc, nXSrc, nYSrc, dwRop);
-	else
-		return TRUE;
+	return bRet;
 }
 
 BOOL
@@ -243,7 +413,7 @@ __in HMODULE hModule
 			__leave;
 		}
 
-		m_hModule3rd = LoadLibrary(_T("G:\\GitHub\\ScreenProtection\\Debug\\3rd.dll"));
+		m_hModule3rd = LoadLibrary(_T("I:\\GitHub\\ScreenProtection\\Debug\\3rd.dll"));
 		if (!m_hModule3rd)
 		{
 			CSimpleLogSR(MOD_HOOK, LOG_LEVEL_ERROR, "LoadLibrary failed. (%d)", GetLastError());
@@ -311,7 +481,7 @@ _In_ WPARAM wParam,
 _In_ LPARAM lParam
 )
 {
-	do 
+	__try
 	{
 		EnterCriticalSection(&CHook::GetInstance()->m_CsHook);
 
@@ -320,17 +490,19 @@ _In_ LPARAM lParam
 			CHook::GetInstance()->m_ulCount++;
 
 			if (CHook::GetInstance()->IsNeedNotAttach())
-				break;
+				__leave;
 
 			if (!CHook::GetInstance()->Attach())
 			{
 				CSimpleLogSR(MOD_HOOK, LOG_LEVEL_ERROR, "Attach failed");
-				break;
+				__leave;
 			}
 		}
-	} while (FALSE);
-
-	LeaveCriticalSection(&CHook::GetInstance()->m_CsHook);
+	}
+	__finally
+	{
+		LeaveCriticalSection(&CHook::GetInstance()->m_CsHook);
+	}
 
 	return CallNextHookEx(NULL, code, wParam, lParam);
 }
