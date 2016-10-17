@@ -60,7 +60,8 @@ private:
 
 	HMODULE					m_hModule;
 	CRITICAL_SECTION		m_CsHook;
-	HHOOK					m_hHook;
+	HHOOK					m_hGetMsgHook;
+	HHOOK					m_hKeyboardHook;
 	ULONG					m_ulCount;
 	TCHAR					m_tchProcPath[MAX_PATH];
 	TCHAR					m_tchWindowsDir[MAX_PATH];
@@ -95,6 +96,15 @@ private:
 		_In_ int    code,
 		_In_ WPARAM wParam,
 		_In_ LPARAM lParam
+		);
+
+	static
+		LRESULT
+		CALLBACK
+		KeyboardProc(
+			_In_ int    code,
+			_In_ WPARAM wParam,
+			_In_ LPARAM lParam
 		);
 
 	static

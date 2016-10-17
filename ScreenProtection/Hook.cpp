@@ -7,7 +7,8 @@ CHook::CHook(
 	)
 {
 	m_hModule = NULL;
-	m_hHook = NULL;
+	m_hGetMsgHook = NULL;
+	m_hKeyboardHook = NULL;
 	m_ulCount = 0;
 	m_ulPid = 0;
 	m_IsNeedProtect = NULL;
@@ -27,7 +28,8 @@ CHook::~CHook()
 		CSimpleLogSR(MOD_HOOK, LOG_LEVEL_ERROR, "Unload failed");
 
 	m_hModule = NULL;
-	m_hHook = NULL;
+	m_hGetMsgHook = NULL;
+	m_hKeyboardHook = NULL;
 	m_ulCount = 0;
 	m_ulPid = 0;
 	m_IsNeedProtect = NULL;
@@ -413,7 +415,7 @@ __in HMODULE hModule
 			__leave;
 		}
 
-		m_hModule3rd = LoadLibrary(_T("I:\\GitHub\\ScreenProtection\\Debug\\3rd.dll"));
+		m_hModule3rd = LoadLibrary(_T("H:\\GitHub\\Application\\ScreenProtection\\Debug\\3rd.dll"));
 		if (!m_hModule3rd)
 		{
 			CSimpleLogSR(MOD_HOOK, LOG_LEVEL_ERROR, "LoadLibrary failed. (%d)", GetLastError());
@@ -504,7 +506,49 @@ _In_ LPARAM lParam
 		LeaveCriticalSection(&CHook::GetInstance()->m_CsHook);
 	}
 
-	return CallNextHookEx(NULL, code, wParam, lParam);
+	return CallNextHookEx(CHook::GetInstance()->m_hGetMsgHook, code, wParam, lParam);
+}
+
+LRESULT
+CALLBACK
+CHook::KeyboardProc(
+	_In_ int    code,
+	_In_ WPARAM wParam,
+	_In_ LPARAM lParam
+)
+{
+	LPKBDLLHOOKSTRUCT	lpKbDllHookStruct = NULL;
+	BOOL				bReject = FALSE;
+
+
+	__try
+	{
+		if (HC_ACTION != code)
+			__leave;
+
+		if (!lParam)
+			__leave;
+
+		lpKbDllHookStruct = (LPKBDLLHOOKSTRUCT)lParam;
+
+		if (VK_SNAPSHOT != lpKbDllHookStruct->vkCode)
+			__leave;
+
+		if (WM_KEYDOWN == wParam || WM_KEYUP == wParam || WM_SYSKEYDOWN == wParam || WM_SYSKEYUP == wParam)
+		{
+			// CSimpleLogSR(MOD_HOOK, LOG_LEVEL_INFORMATION, "%s", CHook::GetInstance()->m_tchProcPath);
+			bReject = TRUE;
+		}
+	}
+	__finally
+	{
+		;
+	}
+
+	if (bReject)
+		return 1;
+	else
+		return CallNextHookEx(CHook::GetInstance()->m_hKeyboardHook, code, wParam, lParam);
 }
 
 BOOL
@@ -515,15 +559,25 @@ CHook::Hook()
 
 	__try
 	{
-		if (NULL != m_hHook)
+		if (NULL != m_hGetMsgHook)
 			__leave;
 
-		m_hHook = SetWindowsHookEx(WH_GETMESSAGE, (HOOKPROC)GetMsgProc, m_hModule, 0);
-		if (NULL == m_hHook)
+		m_hGetMsgHook = SetWindowsHookEx(WH_GETMESSAGE, (HOOKPROC)GetMsgProc, m_hModule, 0);
+		if (NULL == m_hGetMsgHook)
 		{
-			CSimpleLogSR(MOD_HOOK, LOG_LEVEL_ERROR, "SetWindowsHookEx failed. (%d)", GetLastError());
+			CSimpleLogSR(MOD_HOOK, LOG_LEVEL_ERROR, "SetWindowsHookEx WH_GETMESSAGE failed. (%d)", GetLastError());
 			__leave;
 		}
+
+// 		if (NULL != m_hKeyboardHook)
+// 			__leave;
+// 
+// 		m_hKeyboardHook = SetWindowsHookEx(WH_KEYBOARD_LL, (HOOKPROC)KeyboardProc, m_hModule, 0);
+// 		if (NULL == m_hKeyboardHook)
+// 		{
+// 			CSimpleLogSR(MOD_HOOK, LOG_LEVEL_ERROR, "SetWindowsHookEx WH_KEYBOARD_LL failed. (%d)", GetLastError());
+// 			__leave;
+// 		}
 
 		bRet = TRUE;
 	}
@@ -543,15 +597,26 @@ CHook::UnHook()
 
 	__try
 	{
-		if (NULL != m_hHook)
+		if (NULL != m_hGetMsgHook)
 		{
-			if (!UnhookWindowsHookEx(m_hHook))
+			if (!UnhookWindowsHookEx(m_hGetMsgHook))
 			{
-				CSimpleLogSR(MOD_HOOK, LOG_LEVEL_ERROR, "UnhookWindowsHookEx failed. (%d)", GetLastError());
+				CSimpleLogSR(MOD_HOOK, LOG_LEVEL_ERROR, "UnhookWindowsHookEx WH_GETMESSAGE failed. (%d)", GetLastError());
 				__leave;
 			}
 
-			m_hHook = NULL;
+			m_hGetMsgHook = NULL;
+		}
+
+		if (NULL != m_hKeyboardHook)
+		{
+			if (!UnhookWindowsHookEx(m_hKeyboardHook))
+			{
+				CSimpleLogSR(MOD_HOOK, LOG_LEVEL_ERROR, "UnhookWindowsHookEx WH_KEYBOARD_LL failed. (%d)", GetLastError());
+				__leave;
+			}
+
+			m_hKeyboardHook = NULL;
 		}
 
 		bRet = TRUE;

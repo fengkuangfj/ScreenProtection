@@ -60,6 +60,9 @@
     <ClInclude Include="..\..\Public\ProcessControl\ProcessControl.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\Public\Service\Service.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -96,6 +99,9 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Public\ProcessControl\ProcessControl.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Public\Service\Service.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
