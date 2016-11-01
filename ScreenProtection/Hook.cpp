@@ -186,7 +186,7 @@ _In_ DWORD dwRop
 			hWnd = GetWindow(hWnd, GW_HWNDPREV);
 			if (!hWnd)
 			{
-				if (0 == GetLastError() || 2 == GetLastError())
+				if (0 == GetLastError() || 2 == GetLastError() || 6 == GetLastError())
 					break;
 
 				CSimpleLogSR(MOD_HOOK, LOG_LEVEL_ERROR, "GetWindow failed. (%d)", GetLastError());
@@ -311,6 +311,9 @@ _In_ DWORD dwRop
 				if (dwPid == dwPidCurrent ||
 					!CHook::GetInstance()->m_IsNeedProtect(dwPid))
 				{
+					if (WS_EX_LAYERED == (WindowInfo.dwExStyle & WS_EX_LAYERED))
+						continue;
+
 					bRet = TrueBitBlt(
 						hdcDest,
 						WindowInfo.rcWindow.left,
@@ -415,7 +418,7 @@ __in HMODULE hModule
 			__leave;
 		}
 
-		m_hModule3rd = LoadLibrary(_T("H:\\GitHub\\Application\\ScreenProtection\\Debug\\3rd.dll"));
+		m_hModule3rd = LoadLibrary(_T("G:\\GitHub\\Application\\ScreenProtection\\Debug\\3rd.dll"));
 		if (!m_hModule3rd)
 		{
 			CSimpleLogSR(MOD_HOOK, LOG_LEVEL_ERROR, "LoadLibrary failed. (%d)", GetLastError());
