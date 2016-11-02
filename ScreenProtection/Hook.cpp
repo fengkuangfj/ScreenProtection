@@ -111,6 +111,7 @@ _In_ DWORD dwRop
 	BOOL		bFind = FALSE;
 	BOOL		bUsedBitBlt = FALSE;
 	DWORD		dwPidCurrent = 0;
+	TCHAR		tchProcName[MAX_PATH] = { 0 };
 
 
 	__try
@@ -125,7 +126,15 @@ _In_ DWORD dwRop
 		if (dwPid == dwPidCurrent)
 			__leave;
 
-		if (CHook::GetInstance()->m_IsNeedProtect(dwPid))
+		if (CHook::GetInstance()->m_IsNeedProtect(dwPid)
+			||
+			(CProcessControl::GetInstance()->GetName(
+			FALSE,
+			dwPid,
+			tchProcName,
+			_countof(tchProcName)
+			) &&
+			0 != _tcsnicmp(_T("csrss.exe"), tchProcName, _tcslen(tchProcName))))
 		{
 			bRet = TrueBitBlt(hdcDest, nXDest, nYDest, nWidth, nHeight, hdcSrc, nXSrc, nYSrc, BLACKNESS);
 			if (!bRet)
