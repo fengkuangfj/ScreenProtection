@@ -12,7 +12,11 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	__try
 	{
-		hModule = LoadLibrary(L"ScreenProtection.dll");
+#ifdef _X86_
+		hModule = LoadLibrary(L"ScreenProtectionx86.dll");
+#else
+		hModule = LoadLibrary(L"ScreenProtectionx64.dll");
+#endif
 		if (!hModule)
 		{
 			printfEx(MOD_TEST_SCREEN_PROTECTION, PRINTF_LEVEL_ERROR, "LoadLibrary failed. (%d)", GetLastError());

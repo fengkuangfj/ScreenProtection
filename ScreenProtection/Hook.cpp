@@ -418,7 +418,19 @@ __in HMODULE hModule
 			__leave;
 		}
 
-		m_hModule3rd = LoadLibrary(_T("G:\\GitHub\\Application\\ScreenProtection\\Debug\\3rd.dll"));
+#ifdef _DEBUG
+#ifdef _X86_
+		m_hModule3rd = LoadLibrary(_T("G:\\GitHub\\Application\\ScreenProtection\\Debug\\3rdx86.dll"));
+#else
+		m_hModule3rd = LoadLibrary(_T("G:\\GitHub\\Application\\ScreenProtection\\x64\\Debug\\3rdx64.dll"));
+#endif	
+#else
+#ifdef _X86_
+		m_hModule3rd = LoadLibrary(_T("G:\\GitHub\\Application\\ScreenProtection\\Release\\3rdx86.dll"));
+#else
+		m_hModule3rd = LoadLibrary(_T("G:\\GitHub\\Application\\ScreenProtection\\x64\\Release\\3rdx64.dll"));
+#endif	
+#endif
 		if (!m_hModule3rd)
 		{
 			CSimpleLogSR(MOD_HOOK, LOG_LEVEL_ERROR, "LoadLibrary failed. (%d)", GetLastError());
