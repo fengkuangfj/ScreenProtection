@@ -109,13 +109,15 @@ _In_ DWORD dwRop
 	WINDOWINFO	WindowInfo = { 0 };
 	DWORD		dwPid = 0;
 	BOOL		bFind = FALSE;
-	BOOL		bUsedBitBlt = FALSE;
 	DWORD		dwPidCurrent = 0;
-	TCHAR		tchProcName[MAX_PATH] = { 0 };
 
 
 	__try
 	{
+		bRet = TrueBitBlt(hdcDest, nXDest, nYDest, nWidth, nHeight, hdcSrc, nXSrc, nYSrc, dwRop);
+		if (!bRet)
+			__leave;
+
 		hWndSrc = WindowFromDC(hdcSrc);
 		if (!hWndSrc)
 			__leave;
@@ -126,15 +128,7 @@ _In_ DWORD dwRop
 		if (dwPid == dwPidCurrent)
 			__leave;
 
-		if (CHook::GetInstance()->m_IsNeedProtect(dwPid)
-			||
-			(CProcessControl::GetInstance()->GetName(
-			FALSE,
-			dwPid,
-			tchProcName,
-			_countof(tchProcName)
-			) &&
-			0 != _tcsnicmp(_T("csrss.exe"), tchProcName, _tcslen(tchProcName))))
+		if (CHook::GetInstance()->m_IsNeedProtect(dwPid))
 		{
 			bRet = TrueBitBlt(hdcDest, nXDest, nYDest, nWidth, nHeight, hdcSrc, nXSrc, nYSrc, BLACKNESS);
 			if (!bRet)
@@ -142,8 +136,6 @@ _In_ DWORD dwRop
 				CSimpleLogSR(MOD_HOOK, LOG_LEVEL_ERROR, "TrueBitBlt failed. (%d)", GetLastError());
 				__leave;
 			}
-
-			bUsedBitBlt = TRUE;
 
 			CSimpleLogSR(MOD_HOOK, LOG_LEVEL_INFORMATION, "BitBlt BLACKNESS direct. (%d) X (%d) - (%d) Y (%d) - (%d)",
 				dwPid,
@@ -231,24 +223,11 @@ _In_ DWORD dwRop
 					!CHook::GetInstance()->m_IsNeedProtect(dwPid))
 					continue;
 
+// 				if ((WS_VISIBLE | WS_CLIPSIBLINGS | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME | WS_GROUP | WS_TABSTOP) == (WindowInfo.dwStyle & (WS_VISIBLE | WS_CLIPSIBLINGS | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME | WS_GROUP | WS_TABSTOP)) &&
+// 					(WS_EX_WINDOWEDGE | WS_EX_ACCEPTFILES) == (WindowInfo.dwExStyle & (WS_EX_WINDOWEDGE | WS_EX_ACCEPTFILES)))
+// 					continue;
+
 				bFind = TRUE;
-
-				bRet = TrueBitBlt(hdcDest, nXDest, nYDest, nWidth, nHeight, hdcSrc, nXSrc, nYSrc, dwRop);
-				if (!bRet)
-				{
-					CSimpleLogSR(MOD_HOOK, LOG_LEVEL_ERROR, "TrueBitBlt failed. (%d)", GetLastError());
-					__leave;
-				}
-
-				bUsedBitBlt = TRUE;
-
-				CSimpleLogSR(MOD_HOOK, LOG_LEVEL_INFORMATION, "BitBlt all. (%d) X (%d) - (%d) Y (%d) - (%d)",
-					dwPid,
-					nXDest,
-					nXDest + nWidth,
-					nYDest,
-					nYDest + nHeight
-					);
 
 				bRet = TrueBitBlt(
 					hdcDest,
@@ -267,12 +246,20 @@ _In_ DWORD dwRop
 					__leave;
 				}
 
-				CSimpleLogSR(MOD_HOOK, LOG_LEVEL_INFORMATION, "BitBlt BLACKNESS first. (%d) X (%d) - (%d) Y (%d) - (%d)",
+				CSimpleLogSR(MOD_HOOK, LOG_LEVEL_INFORMATION, "BitBlt BLACKNESS first. (%d) Style(0x%x) ExStyle(0x%x) X (%d) - (%d) Y (%d) - (%d) X (%d) - (%d) Y (%d) - (%d) (%d) (%d)",
 					dwPid,
+					WindowInfo.dwStyle,
+					WindowInfo.dwExStyle,
 					WindowInfo.rcWindow.left,
 					WindowInfo.rcWindow.right,
 					WindowInfo.rcWindow.top,
-					WindowInfo.rcWindow.bottom
+					WindowInfo.rcWindow.bottom,
+					WindowInfo.rcClient.left,
+					WindowInfo.rcClient.right,
+					WindowInfo.rcClient.top,
+					WindowInfo.rcClient.bottom,
+					nXSrc,
+					nXDest
 					);
 			}
 			else
@@ -301,8 +288,6 @@ _In_ DWORD dwRop
 						CSimpleLogSR(MOD_HOOK, LOG_LEVEL_ERROR, "TrueBitBlt failed. (%d)", GetLastError());
 						__leave;
 					}
-
-					bUsedBitBlt = TRUE;
 
 					CSimpleLogSR(MOD_HOOK, LOG_LEVEL_INFORMATION, "BitBlt dwRop no overlap. (%d) X (%d) - (%d) Y (%d) - (%d)",
 						dwPid,
@@ -340,8 +325,6 @@ _In_ DWORD dwRop
 						__leave;
 					}
 
-					bUsedBitBlt = TRUE;
-
 					CSimpleLogSR(MOD_HOOK, LOG_LEVEL_INFORMATION, "BitBlt dwRop overlap, but need not protect. (%d) X (%d) - (%d) Y (%d) - (%d)",
 						dwPid,
 						WindowInfo.rcWindow.left,
@@ -370,8 +353,6 @@ _In_ DWORD dwRop
 					__leave;
 				}
 
-				bUsedBitBlt = TRUE;
-
 				CSimpleLogSR(MOD_HOOK, LOG_LEVEL_INFORMATION, "BitBlt BLACKNESS not first. (%d) X (%d) - (%d) Y (%d) - (%d)",
 					dwPid,
 					WindowInfo.rcWindow.left,
@@ -386,8 +367,7 @@ _In_ DWORD dwRop
 	}
 	__finally
 	{
-		if (!bUsedBitBlt)
-			bRet = TrueBitBlt(hdcDest, nXDest, nYDest, nWidth, nHeight, hdcSrc, nXSrc, nYSrc, dwRop);
+		;
 	}
 
 	return bRet;
@@ -668,8 +648,17 @@ CHook::IsNeedNotAttach()
 			__leave;
 		}
 
-		if (_tcslen(m_tchProcPath) >= _tcslen(_T("rdfsnap.exe")) &&
+		if ((_tcslen(m_tchProcPath) >= _tcslen(_T("rdfsnap.exe")) &&
 			(0 == _tcsnicmp(m_tchProcPath + (_tcslen(m_tchProcPath) - _tcslen(_T("rdfsnap.exe"))), _T("rdfsnap.exe"), _tcslen(_T("rdfsnap.exe")))))
+			||
+			(_tcslen(m_tchProcPath) >= _tcslen(_T("FSCapture.exe")) &&
+			(0 == _tcsnicmp(m_tchProcPath + (_tcslen(m_tchProcPath) - _tcslen(_T("FSCapture.exe"))), _T("FSCapture.exe"), _tcslen(_T("FSCapture.exe")))))
+			||
+			(_tcslen(m_tchProcPath) >= _tcslen(_T("HprSnap7.exe")) &&
+			(0 == _tcsnicmp(m_tchProcPath + (_tcslen(m_tchProcPath) - _tcslen(_T("HprSnap7.exe"))), _T("HprSnap7.exe"), _tcslen(_T("HprSnap7.exe")))))
+			||
+			(_tcslen(m_tchProcPath) >= _tcslen(_T("picpick.exe")) &&
+			(0 == _tcsnicmp(m_tchProcPath + (_tcslen(m_tchProcPath) - _tcslen(_T("picpick.exe"))), _T("picpick.exe"), _tcslen(_T("picpick.exe"))))))
 			bRet = FALSE;
 		else
 			bRet = TRUE;
