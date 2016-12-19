@@ -21,3 +21,4 @@
 #include "..\\..\\Public\\ModulePath\\ModulePath.h"
 #include "..\\..\\Public\\ProcessControl\\ProcessControl.h"
 #include "..\\..\\Public\\PrintfEx\\PrintfEx.h"
+#include "..\\..\\Public\\SimpleLog\\SimpleLog.h"
