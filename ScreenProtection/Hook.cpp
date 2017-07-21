@@ -4,7 +4,7 @@ CHook * CHook::ms_pInstance = NULL;
 
 CHook::CHook(
 	__in HMODULE hModule
-	)
+)
 {
 	m_hModule = NULL;
 	m_hGetMsgHook = NULL;
@@ -89,15 +89,15 @@ CHook::Detach()
 BOOL
 WINAPI
 CHook::NewBitBlt(
-_In_ HDC   hdcDest,
-_In_ int   nXDest,
-_In_ int   nYDest,
-_In_ int   nWidth,
-_In_ int   nHeight,
-_In_ HDC   hdcSrc,
-_In_ int   nXSrc,
-_In_ int   nYSrc,
-_In_ DWORD dwRop
+	_In_ HDC   hdcDest,
+	_In_ int   nXDest,
+	_In_ int   nYDest,
+	_In_ int   nWidth,
+	_In_ int   nHeight,
+	_In_ HDC   hdcSrc,
+	_In_ int   nXSrc,
+	_In_ int   nYSrc,
+	_In_ DWORD dwRop
 )
 {
 	BOOL		bRet = FALSE;
@@ -110,6 +110,10 @@ _In_ DWORD dwRop
 	DWORD		dwPid = 0;
 	BOOL		bFind = FALSE;
 	DWORD		dwPidCurrent = 0;
+	COLORREF	crKey = 0;
+	BYTE		bAlpha = 0;
+	DWORD		dwFlags = 0;
+	TCHAR		tchClassName[MAX_PATH] = { 0 };
 
 
 	__try
@@ -143,7 +147,7 @@ _In_ DWORD dwRop
 				nXDest + nWidth,
 				nYDest,
 				nYDest + nHeight
-				);
+			);
 
 			__leave;
 		}
@@ -179,7 +183,7 @@ _In_ DWORD dwRop
 
 		CSimpleLogSR(MOD_HOOK, LOG_LEVEL_INFORMATION, "BitBlt begin");
 
-		do 
+		do
 		{
 			ZeroMemory(&WindowInfo, sizeof(WindowInfo));
 			dwPid = 0;
@@ -214,7 +218,7 @@ _In_ DWORD dwRop
 					&&
 					((WindowInfo.rcWindow.top <= WindowInfoSrc.rcWindow.top && WindowInfoSrc.rcWindow.top <= WindowInfo.rcWindow.bottom) ||
 					(WindowInfoSrc.rcWindow.top <= WindowInfo.rcWindow.top && WindowInfo.rcWindow.bottom <= WindowInfoSrc.rcWindow.bottom) ||
-					(WindowInfo.rcWindow.top <= WindowInfoSrc.rcWindow.bottom && WindowInfoSrc.rcWindow.bottom <= WindowInfo.rcWindow.bottom))))
+						(WindowInfo.rcWindow.top <= WindowInfoSrc.rcWindow.bottom && WindowInfoSrc.rcWindow.bottom <= WindowInfo.rcWindow.bottom))))
 					continue;
 
 				GetWindowThreadProcessId(hWnd, &dwPid);
@@ -223,9 +227,9 @@ _In_ DWORD dwRop
 					!CHook::GetInstance()->m_IsNeedProtect(dwPid))
 					continue;
 
-// 				if ((WS_VISIBLE | WS_CLIPSIBLINGS | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME | WS_GROUP | WS_TABSTOP) == (WindowInfo.dwStyle & (WS_VISIBLE | WS_CLIPSIBLINGS | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME | WS_GROUP | WS_TABSTOP)) &&
-// 					(WS_EX_WINDOWEDGE | WS_EX_ACCEPTFILES) == (WindowInfo.dwExStyle & (WS_EX_WINDOWEDGE | WS_EX_ACCEPTFILES)))
-// 					continue;
+				// 				if ((WS_VISIBLE | WS_CLIPSIBLINGS | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME | WS_GROUP | WS_TABSTOP) == (WindowInfo.dwStyle & (WS_VISIBLE | WS_CLIPSIBLINGS | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME | WS_GROUP | WS_TABSTOP)) &&
+				// 					(WS_EX_WINDOWEDGE | WS_EX_ACCEPTFILES) == (WindowInfo.dwExStyle & (WS_EX_WINDOWEDGE | WS_EX_ACCEPTFILES)))
+				// 					continue;
 
 				bFind = TRUE;
 
@@ -239,7 +243,7 @@ _In_ DWORD dwRop
 					WindowInfo.rcWindow.left,
 					WindowInfo.rcWindow.top,
 					BLACKNESS
-					);
+				);
 				if (!bRet)
 				{
 					CSimpleLogSR(MOD_HOOK, LOG_LEVEL_ERROR, "TrueBitBlt failed. (%d)", GetLastError());
@@ -260,7 +264,7 @@ _In_ DWORD dwRop
 					WindowInfo.rcClient.bottom,
 					nXSrc,
 					nXDest
-					);
+				);
 			}
 			else
 			{
@@ -270,7 +274,7 @@ _In_ DWORD dwRop
 					&&
 					((WindowInfo.rcWindow.top <= WindowInfoSrc.rcWindow.top && WindowInfoSrc.rcWindow.top <= WindowInfo.rcWindow.bottom) ||
 					(WindowInfoSrc.rcWindow.top <= WindowInfo.rcWindow.top && WindowInfo.rcWindow.bottom <= WindowInfoSrc.rcWindow.bottom) ||
-					(WindowInfo.rcWindow.top <= WindowInfoSrc.rcWindow.bottom && WindowInfoSrc.rcWindow.bottom <= WindowInfo.rcWindow.bottom))))
+						(WindowInfo.rcWindow.top <= WindowInfoSrc.rcWindow.bottom && WindowInfoSrc.rcWindow.bottom <= WindowInfo.rcWindow.bottom))))
 				{
 					bRet = TrueBitBlt(
 						hdcDest,
@@ -282,7 +286,7 @@ _In_ DWORD dwRop
 						WindowInfo.rcWindow.left,
 						WindowInfo.rcWindow.top,
 						dwRop
-						);
+					);
 					if (!bRet)
 					{
 						CSimpleLogSR(MOD_HOOK, LOG_LEVEL_ERROR, "TrueBitBlt failed. (%d)", GetLastError());
@@ -295,7 +299,7 @@ _In_ DWORD dwRop
 						WindowInfo.rcWindow.right,
 						WindowInfo.rcWindow.top,
 						WindowInfo.rcWindow.bottom
-						);
+					);
 
 					continue;
 				}
@@ -306,7 +310,52 @@ _In_ DWORD dwRop
 					!CHook::GetInstance()->m_IsNeedProtect(dwPid))
 				{
 					if (WS_EX_LAYERED == (WindowInfo.dwExStyle & WS_EX_LAYERED))
-						continue;
+					{
+						if (!GetLayeredWindowAttributes(hWnd, &crKey, &bAlpha, &dwFlags))
+							continue;
+
+						if (LWA_COLORKEY == (dwFlags & LWA_COLORKEY))
+							continue;
+
+						if (LWA_ALPHA == (dwFlags & LWA_ALPHA))
+						{
+							if (255 != bAlpha)
+								continue;
+
+							if (0 != GetClassName(hWnd, tchClassName, _countof(tchClassName)) &&
+								(0 == _tcsicmp(tchClassName, _T("Screen Magnifier Window")) ||
+									0 == _tcsicmp(tchClassName, _T("Screen Magnifier Lens Window"))/* ||
+									0 == _tcsicmp(tchClassName, _T("Screen Magnifier Fullscreen Window"))*/))
+							{
+								bRet = TrueBitBlt(
+									hdcDest,
+									WindowInfo.rcWindow.left,
+									WindowInfo.rcWindow.top,
+									WindowInfo.rcWindow.right - WindowInfo.rcWindow.left,
+									WindowInfo.rcWindow.bottom - WindowInfo.rcWindow.top,
+									hdcSrc,
+									WindowInfo.rcWindow.left,
+									WindowInfo.rcWindow.top,
+									BLACKNESS
+								);
+								if (!bRet)
+								{
+									CSimpleLogSR(MOD_HOOK, LOG_LEVEL_ERROR, "TrueBitBlt failed. (%d)", GetLastError());
+									__leave;
+								}
+
+								CSimpleLogSR(MOD_HOOK, LOG_LEVEL_INFORMATION, "BitBlt BLACKNESS not first. [Screen Magnifier] (%d) X (%d) - (%d) Y (%d) - (%d)",
+									dwPid,
+									WindowInfo.rcWindow.left,
+									WindowInfo.rcWindow.right,
+									WindowInfo.rcWindow.top,
+									WindowInfo.rcWindow.bottom
+								);
+
+								continue;
+							}
+						}
+					}
 
 					bRet = TrueBitBlt(
 						hdcDest,
@@ -318,7 +367,7 @@ _In_ DWORD dwRop
 						WindowInfo.rcWindow.left,
 						WindowInfo.rcWindow.top,
 						dwRop
-						);
+					);
 					if (!bRet)
 					{
 						CSimpleLogSR(MOD_HOOK, LOG_LEVEL_ERROR, "TrueBitBlt failed. (%d)", GetLastError());
@@ -331,7 +380,7 @@ _In_ DWORD dwRop
 						WindowInfo.rcWindow.right,
 						WindowInfo.rcWindow.top,
 						WindowInfo.rcWindow.bottom
-						);
+					);
 
 					continue;
 				}
@@ -346,7 +395,7 @@ _In_ DWORD dwRop
 					WindowInfo.rcWindow.left,
 					WindowInfo.rcWindow.top,
 					BLACKNESS
-					);
+				);
 				if (!bRet)
 				{
 					CSimpleLogSR(MOD_HOOK, LOG_LEVEL_ERROR, "TrueBitBlt failed. (%d)", GetLastError());
@@ -359,7 +408,7 @@ _In_ DWORD dwRop
 					WindowInfo.rcWindow.right,
 					WindowInfo.rcWindow.top,
 					WindowInfo.rcWindow.bottom
-					);
+				);
 			}
 		} while (TRUE);
 
@@ -375,7 +424,7 @@ _In_ DWORD dwRop
 
 BOOL
 CHook::Init(
-__in HMODULE hModule
+	__in HMODULE hModule
 )
 {
 	BOOL bRet = FALSE;
@@ -409,9 +458,11 @@ __in HMODULE hModule
 
 #ifdef _DEBUG
 #ifdef _X86_
-		m_hModule3rd = LoadLibrary(_T("G:\\GitHub\\Application\\ScreenProtection\\Debug\\3rdx86.dll"));
+		// m_hModule3rd = LoadLibrary(_T("H:\\GitHub\\Application\\ScreenProtection\\Debug\\3rdx86.dll"));
+		m_hModule3rd = LoadLibrary(_T("C:\\1\\3rdx86.dll"));
 #else
-		m_hModule3rd = LoadLibrary(_T("G:\\GitHub\\Application\\ScreenProtection\\x64\\Debug\\3rdx64.dll"));
+		// m_hModule3rd = LoadLibrary(_T("H:\\GitHub\\Application\\ScreenProtection\\x64\\Debug\\3rdx64.dll"));
+		m_hModule3rd = LoadLibrary(_T("C:\\1\\3rdx64.dll"));
 #endif	
 #else
 #ifdef _X86_
@@ -482,9 +533,9 @@ CHook::Unload()
 LRESULT
 CALLBACK
 CHook::GetMsgProc(
-_In_ int    code,
-_In_ WPARAM wParam,
-_In_ LPARAM lParam
+	_In_ int    code,
+	_In_ WPARAM wParam,
+	_In_ LPARAM lParam
 )
 {
 	__try
@@ -573,15 +624,15 @@ CHook::Hook()
 			__leave;
 		}
 
-// 		if (NULL != m_hKeyboardHook)
-// 			__leave;
-// 
-// 		m_hKeyboardHook = SetWindowsHookEx(WH_KEYBOARD_LL, (HOOKPROC)KeyboardProc, m_hModule, 0);
-// 		if (NULL == m_hKeyboardHook)
-// 		{
-// 			CSimpleLogSR(MOD_HOOK, LOG_LEVEL_ERROR, "SetWindowsHookEx WH_KEYBOARD_LL failed. (%d)", GetLastError());
-// 			__leave;
-// 		}
+		// 		if (NULL != m_hKeyboardHook)
+		// 			__leave;
+		// 
+		// 		m_hKeyboardHook = SetWindowsHookEx(WH_KEYBOARD_LL, (HOOKPROC)KeyboardProc, m_hModule, 0);
+		// 		if (NULL == m_hKeyboardHook)
+		// 		{
+		// 			CSimpleLogSR(MOD_HOOK, LOG_LEVEL_ERROR, "SetWindowsHookEx WH_KEYBOARD_LL failed. (%d)", GetLastError());
+		// 			__leave;
+		// 		}
 
 		bRet = TRUE;
 	}
@@ -672,13 +723,13 @@ CHook::IsNeedNotAttach()
 }
 
 CHook *
-	CHook::GetInstance(
+CHook::GetInstance(
 	__in HMODULE hModule
-	)
+)
 {
 	if (!ms_pInstance)
 	{
-		do 
+		do
 		{
 			ms_pInstance = new CHook(hModule);
 			if (!ms_pInstance)
@@ -692,7 +743,7 @@ CHook *
 }
 
 VOID
-	CHook::ReleaseInstance()
+CHook::ReleaseInstance()
 {
 	if (ms_pInstance)
 	{

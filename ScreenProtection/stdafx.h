@@ -31,3 +31,5 @@
 #else
 #pragma comment(lib, "hookhelperx86.lib")
 #endif
+
+#pragma comment(lib, "Msimg32.lib")
